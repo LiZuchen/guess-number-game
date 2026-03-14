@@ -184,6 +184,25 @@
             font-size: 1.2em;
         }
 
+        /* 惩罚选项样式 */
+        #punishmentOptions button {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        }
+
+        #punishmentOptions button:active {
+            transform: scale(0.97);
+        }
+
+        #customPunishment {
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        #customPunishment:focus {
+            outline: none;
+            border-color: #28a745;
+        }
+
         .history-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -413,6 +432,11 @@
                 font-size: 0.95em;
             }
 
+            #punishmentOptions button {
+                min-width: 100% !important;
+                margin-bottom: 8px;
+            }
+
             .winner-section {
                 padding: 25px 15px;
             }
@@ -486,6 +510,30 @@
                 </div>
             </div>
 
+            <!-- 惩罚选项 -->
+            <div class="player-section" style="border-left-color: #28a745;">
+                <h2>🎲 惩罚设置</h2>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 1.1em;">
+                        <input type="checkbox" id="punishmentToggle" onchange="togglePunishment()" style="width: 20px; height: 20px;">
+                        开启惩罚模式
+                    </label>
+                </div>
+                <div id="punishmentOptions" style="display: none;">
+                    <p style="color: #666; margin-bottom: 10px; font-size: 0.95em;">输的人要接受惩罚：</p>
+                    <div class="input-group" style="flex-wrap: wrap; gap: 8px;">
+                        <button onclick="selectPunishment('洗碗一天')" style="flex: 1; min-width: 120px; font-size: 0.95em;">🍽️ 洗碗一天</button>
+                        <button onclick="selectPunishment('倒垃圾一周')" style="flex: 1; min-width: 120px; font-size: 0.95em;">🗑️ 倒垃圾一周</button>
+                        <button onclick="selectPunishment('打扫卫生')" style="flex: 1; min-width: 120px; font-size: 0.95em;">🧹 打扫卫生</button>
+                        <button onclick="selectPunishment('买奶茶')" style="flex: 1; min-width: 120px; font-size: 0.95em;">🧋 买奶茶</button>
+                    </div>
+                    <div style="margin-top: 15px;">
+                        <p style="color: #666; margin-bottom: 8px; font-size: 0.95em;">或自定义惩罚：</p>
+                        <input type="text" id="customPunishment" placeholder="输入自定义惩罚内容" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 1em;">
+                    </div>
+                </div>
+            </div>
+
             <div id="startButton" style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 2px dashed #ddd; display: none;">
                 <p style="color: #667eea; margin-bottom: 15px; font-size: 1.1em; font-weight: bold;">✅ 双方已准备就绪</p>
                 <button onclick="startGame()" style="font-size: 1.3em; padding: 20px 50px;">🎮 开始游戏</button>
@@ -526,6 +574,10 @@
             <div class="winner-section" id="winnerSection" style="display: none;">
                 <h2>🎉</h2>
                 <p id="winnerText">玩家 X 获胜！</p>
+                <div id="punishmentResult" style="background: rgba(255,255,255,0.2); border-radius: 8px; padding: 15px; margin: 15px 0; display: none;">
+                    <p style="font-size: 1.1em; margin-bottom: 5px;">🎯 惩罚结果</p>
+                    <p id="punishmentText" style="font-size: 1.3em; font-weight: bold;"></p>
+                </div>
                 <button onclick="restartGame()">再来一局</button>
             </div>
         </div>
@@ -540,6 +592,10 @@
         let history = [];
         let player1Guesses = 0;
         let player2Guesses = 0;
+        
+        // 惩罚相关变量
+        let punishmentEnabled = false;
+        let selectedPunishment = '';
 
         // 修复：修正玩家1/2标题更新的DOM定位
         function setPlayer1Number() {
@@ -587,7 +643,25 @@
             }
         }
 
+        function togglePunishment() {
+            const checkbox = document.getElementById('punishmentToggle');
+            const options = document.getElementById('punishmentOptions');
+            punishmentEnabled = checkbox.checked;
+            options.style.display = punishmentEnabled ? 'block' : 'none';
+        }
+
+        function selectPunishment(punishment) {
+            selectedPunishment = punishment;
+            document.getElementById('customPunishment').value = punishment;
+        }
+
         function startGame() {
+            // 获取自定义惩罚内容
+            const customPunishment = document.getElementById('customPunishment').value.trim();
+            if (punishmentEnabled && customPunishment) {
+                selectedPunishment = customPunishment;
+            }
+            
             document.getElementById('setupPhase').classList.remove('active');
             document.getElementById('gamePhase').classList.add('active');
             updateTurnIndicator();
@@ -701,11 +775,22 @@
         function showWinner(winner) {
             const winnerSection = document.getElementById('winnerSection');
             const winnerText = document.getElementById('winnerText');
+            const punishmentResult = document.getElementById('punishmentResult');
+            const punishmentText = document.getElementById('punishmentText');
             
             const winnerName = winner === 1 ? '玩家 1' : '玩家 2';
+            const loserName = winner === 1 ? '玩家 2' : '玩家 1';
             const guessCount = winner === 1 ? player1Guesses + 1 : player2Guesses + 1;
             
             winnerText.innerHTML = `🏆 ${winnerName} 获胜！<br><small style="font-size: 0.6em; opacity: 0.9;">用了 ${guessCount} 次猜测</small>`;
+            
+            // 显示惩罚结果
+            if (punishmentEnabled && selectedPunishment) {
+                punishmentResult.style.display = 'block';
+                punishmentText.innerHTML = `😭 ${loserName} 要：${selectedPunishment}`;
+            } else {
+                punishmentResult.style.display = 'none';
+            }
             
             winnerSection.style.display = 'block';
             createConfetti();
@@ -742,8 +827,11 @@
             history = [];
             player1Guesses = 0;
             player2Guesses = 0;
+            punishmentEnabled = false;
+            selectedPunishment = '';
             
             document.getElementById('winnerSection').style.display = 'none';
+            document.getElementById('punishmentResult').style.display = 'none';
             document.getElementById('historyPlayer1').innerHTML = '';
             document.getElementById('historyPlayer2').innerHTML = '';
             document.getElementById('startButton').style.display = 'none';
@@ -756,6 +844,12 @@
             p2Input.value = '';
             document.getElementById('player1Title').textContent = '👤 玩家 1';
             document.getElementById('player2Title').textContent = '👤 玩家 2';
+            
+            // 重置惩罚选项
+            document.getElementById('punishmentToggle').checked = false;
+            document.getElementById('punishmentOptions').style.display = 'none';
+            document.getElementById('customPunishment').value = '';
+            selectedPunishment = '';
             
             // 重置猜测输入框
             const guessInput = document.getElementById('guessInput');
