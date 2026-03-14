@@ -14,29 +14,15 @@
 - B 猜 `3333` → 反馈：对了 2 个数字（第 2、3 位正确）
 - B 猜 `2331` → 反馈：对了 4 个数字，B 获胜！🎉
 
-## 🚀 部署到 GitHub Pages
-
-1. 创建一个新的 GitHub 仓库（例如 `guess-number-game`）
-2. 将本文件夹的内容推送到仓库：
-   ```bash
-   git remote add origin https://github.com/你的用户名/guess-number-game.git
-   git branch -M main
-   git push -u origin main
-   ```
-3. 在 GitHub 仓库页面：
-   - 进入 **Settings** → **Pages**
-   - Source 选择 **main** 分支
-   - 点击 **Save**
-4. 等待几分钟，你的游戏就会在 `https://你的用户名.github.io/guess-number-game/` 上线！
-
 ## 🎮 如何玩
 
-1. 打开网页
-2. 玩家 1 先输入一个四位数并确认
-3. 玩家 2 输入一个四位数并确认
-4. 游戏自动开始，玩家 1 先猜
-5. 轮流猜测，直到一方获胜
-6. 点击"再来一局"重新开始
+1. 玩家 1 输入一个四位数并确认
+2. 玩家 2 输入一个四位数并确认
+3. 点击"🎮 开始游戏"按钮
+4. 玩家 1 先猜，轮流猜测对方的数字
+5. 每次会反馈对了几个数字（位置也要对）
+6. 先猜中 4 个数字者获胜！
+7. 点击"再来一局"重新开始
 
 ## ✨ 特性
 
