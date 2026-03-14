@@ -295,6 +295,10 @@
                     <button onclick="setPlayer2Number()">确认</button>
                 </div>
             </div>
+
+            <div id="startButton" style="text-align: center; margin-top: 20px; display: none;">
+                <button onclick="startGame()" style="font-size: 1.3em; padding: 20px 50px;">🎮 开始游戏</button>
+            </div>
         </div>
 
         <!-- 游戏阶段 -->
@@ -377,12 +381,15 @@
 
         function checkSetupComplete() {
             if (player1Set && player2Set) {
-                setTimeout(() => {
-                    document.getElementById('setupPhase').classList.remove('active');
-                    document.getElementById('gamePhase').classList.add('active');
-                    updateTurnIndicator();
-                }, 500);
+                // 显示开始按钮，而不是自动开始
+                document.getElementById('startButton').style.display = 'block';
             }
+        }
+
+        function startGame() {
+            document.getElementById('setupPhase').classList.remove('active');
+            document.getElementById('gamePhase').classList.add('active');
+            updateTurnIndicator();
         }
 
         function updateTurnIndicator() {
@@ -519,6 +526,7 @@
             document.getElementById('gamePhase').classList.remove('active');
             document.getElementById('setupPhase').classList.add('active');
             document.getElementById('historyList').innerHTML = '';
+            document.getElementById('startButton').style.display = 'none';
             
             const p1Input = document.getElementById('player1Number');
             const p2Input = document.getElementById('player2Number');
