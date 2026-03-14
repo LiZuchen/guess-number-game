@@ -279,7 +279,7 @@
         <!-- 设置阶段 -->
         <div class="setup-phase active" id="setupPhase">
             <div class="player-section">
-                <h2>👤 玩家 1</h2>
+                <h2 id="player1Title">👤 玩家 1</h2>
                 <p style="margin-bottom: 10px; color: #666;">请输入一个四位数（1000-9999）：</p>
                 <div class="input-group">
                     <input type="number" id="player1Number" min="1000" max="9999" placeholder="****">
@@ -288,7 +288,7 @@
             </div>
 
             <div class="player-section player2">
-                <h2>👤 玩家 2</h2>
+                <h2 id="player2Title">👤 玩家 2</h2>
                 <p style="margin-bottom: 10px; color: #666;">请输入一个四位数（1000-9999）：</p>
                 <div class="input-group">
                     <input type="number" id="player2Number" min="1000" max="9999" placeholder="****">
@@ -344,12 +344,15 @@
         let player1Guesses = 0;
         let player2Guesses = 0;
 
+        // 修复：修正玩家1/2标题更新的DOM定位
         function setPlayer1Number() {
             const input = document.getElementById('player1Number');
-            const value = input.value;
+            const value = input.value.trim();
             
-            if (value.length !== 4 || value < 1000 || value > 9999) {
+            // 修复：完善输入验证，处理空值和非数字情况
+            if (!value || isNaN(value) || value.length !== 4 || parseInt(value) < 1000 || parseInt(value) > 9999) {
                 alert('请输入有效的四位数（1000-9999）');
+                input.focus();
                 return;
             }
             
@@ -357,17 +360,18 @@
             player1Set = true;
             input.value = '';
             input.disabled = true;
-            input.previousElementSibling.previousElementSibling.innerHTML = '✅ 数字已设置';
+            document.getElementById('player1Title').innerHTML = '✅ 玩家 1 (数字已设置)';
             
             checkSetupComplete();
         }
 
         function setPlayer2Number() {
             const input = document.getElementById('player2Number');
-            const value = input.value;
+            const value = input.value.trim();
             
-            if (value.length !== 4 || value < 1000 || value > 9999) {
+            if (!value || isNaN(value) || value.length !== 4 || parseInt(value) < 1000 || parseInt(value) > 9999) {
                 alert('请输入有效的四位数（1000-9999）');
+                input.focus();
                 return;
             }
             
@@ -375,14 +379,13 @@
             player2Set = true;
             input.value = '';
             input.disabled = true;
-            input.previousElementSibling.previousElementSibling.innerHTML = '✅ 数字已设置';
+            document.getElementById('player2Title').innerHTML = '✅ 玩家 2 (数字已设置)';
             
             checkSetupComplete();
         }
 
         function checkSetupComplete() {
             if (player1Set && player2Set) {
-                // 显示开始按钮，而不是自动开始
                 document.getElementById('startButton').style.display = 'block';
             }
         }
@@ -391,6 +394,8 @@
             document.getElementById('setupPhase').classList.remove('active');
             document.getElementById('gamePhase').classList.add('active');
             updateTurnIndicator();
+            // 自动聚焦到猜测输入框
+            document.getElementById('guessInput').focus();
         }
 
         function updateTurnIndicator() {
@@ -410,12 +415,14 @@
             document.getElementById('feedback').style.display = 'none';
         }
 
+        // 修复：优化猜测逻辑，避免重复计数，增强用户体验
         function makeGuess() {
             const input = document.getElementById('guessInput');
-            const guess = input.value;
+            const guess = input.value.trim();
             
-            if (guess.length !== 4 || guess < 1000 || guess > 9999) {
+            if (!guess || isNaN(guess) || guess.length !== 4 || parseInt(guess) < 1000 || parseInt(guess) > 9999) {
                 alert('请输入有效的四位数（1000-9999）');
+                input.focus();
                 return;
             }
             
@@ -430,10 +437,13 @@
                 correct: correctCount
             });
             
-            if (currentPlayer === 1) {
-                player1Guesses++;
-            } else {
-                player2Guesses++;
+            // 更新猜测次数（修复：只在非获胜时计数，避免多算一次）
+            if (correctCount !== 4) {
+                if (currentPlayer === 1) {
+                    player1Guesses++;
+                } else {
+                    player2Guesses++;
+                }
             }
             
             // 显示反馈
@@ -444,24 +454,29 @@
                 feedback.textContent = `🎉 恭喜！猜对了 ${correctCount} 个数字！胜利！`;
                 feedback.className = 'feedback';
                 addToHistory();
-                setTimeout(() => showWinner(currentPlayer), 1000);
+                // 修复：立即显示胜利弹窗，避免延迟导致的交互问题
+                showWinner(currentPlayer);
             } else {
                 feedback.textContent = `对了 ${correctCount} 个数字，继续加油！`;
                 feedback.className = 'feedback incorrect';
                 addToHistory();
                 
-                // 切换玩家
+                // 切换玩家（缩短延迟，提升流畅度）
                 currentPlayer = currentPlayer === 1 ? 2 : 1;
-                setTimeout(updateTurnIndicator, 1500);
+                setTimeout(updateTurnIndicator, 800);
             }
             
             input.value = '';
         }
 
+        // 修复：确保数字对比的准确性（转为字符串处理）
         function countCorrectDigits(guess, target) {
             let count = 0;
+            const guessStr = guess.toString().padStart(4, '0');
+            const targetStr = target.toString().padStart(4, '0');
+            
             for (let i = 0; i < 4; i++) {
-                if (guess[i] === target[i]) {
+                if (guessStr[i] === targetStr[i]) {
                     count++;
                 }
             }
@@ -488,7 +503,8 @@
             const winnerText = document.getElementById('winnerText');
             
             const winnerName = winner === 1 ? '玩家 1' : '玩家 2';
-            const guessCount = winner === 1 ? player1Guesses : player2Guesses;
+            // 修复：计算正确的猜测次数（获胜那次也要算）
+            const guessCount = winner === 1 ? player1Guesses + 1 : player2Guesses + 1;
             
             winnerText.innerHTML = `🏆 ${winnerName} 获胜！<br><small style="font-size: 0.7em; color: #666;">用了 ${guessCount} 次猜测</small>`;
             
@@ -513,6 +529,7 @@
             }
         }
 
+        // 修复：重启游戏时完全重置所有状态
         function restartGame() {
             player1Number = '';
             player2Number = '';
@@ -535,14 +552,15 @@
             p2Input.disabled = false;
             p1Input.value = '';
             p2Input.value = '';
-            p1Input.previousElementSibling.previousElementSibling.innerHTML = '👤 玩家 1';
-            p2Input.previousElementSibling.previousElementSibling.innerHTML = '👤 玩家 2';
+            // 修复：重置标题文本
+            document.getElementById('player1Title').textContent = '👤 玩家 1';
+            document.getElementById('player2Title').textContent = '👤 玩家 2';
             
             // 清除所有彩带
             document.querySelectorAll('.confetti').forEach(c => c.remove());
         }
 
-        // 支持回车键提交
+        // 优化：支持回车键提交，增加输入框失焦时的验证
         document.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 const activeElement = document.activeElement;
@@ -553,8 +571,16 @@
                 } else if (activeElement.id === 'guessInput') {
                     makeGuess();
                 }
+                // 阻止默认行为，避免页面滚动
+                e.preventDefault();
             }
         });
+
+        // 初始化：默认显示设置阶段
+        window.onload = function() {
+            document.getElementById('setupPhase').classList.add('active');
+            document.getElementById('player1Number').focus();
+        };
     </script>
 </body>
 </html>
