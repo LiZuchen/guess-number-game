@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>猜数字游戏</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 800px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .setup-phase, .game-phase {
+            display: none;
+        }
+
+        .setup-phase.active, .game-phase.active {
+            display: block;
+        }
+
+        .player-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border-left: 5px solid #667eea;
+        }
+
+        .player-section.player2 {
+            border-left-color: #764ba2;
+        }
+
+        .player-section h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        input[type="number"] {
+            flex: 1;
+            padding: 15px;
+            font-size: 1.5em;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            text-align: center;
+            letter-spacing: 5px;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 1.1em;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .game-info {
+            background: #e8f4f8;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .game-info h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .turn-indicator {
+            font-size: 1.3em;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .guess-section {
+            background: #fff3cd;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border-left: 5px solid #ffc107;
+        }
+
+        .guess-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .feedback {
+            background: #d4edda;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 15px;
+            text-align: center;
+            font-size: 1.2em;
+            color: #155724;
+        }
+
+        .feedback.incorrect {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .history {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .history h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .history-item {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .history-item:last-child {
+            border-bottom: none;
+        }
+
+        .history-player {
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .history-guess {
+            color: #333;
+        }
+
+        .history-result {
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .winner-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .winner-modal.active {
+            display: flex;
+        }
+
+        .winner-content {
+            background: white;
+            border-radius: 20px;
+            padding: 50px;
+            text-align: center;
+            animation: popIn 0.3s ease;
+        }
+
+        @keyframes popIn {
+            from {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .winner-content h2 {
+            font-size: 3em;
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        .winner-content p {
+            font-size: 1.5em;
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background: #f00;
+            animation: fall 3s linear infinite;
+        }
+
+        @keyframes fall {
+            to {
+                transform: translateY(100vh) rotate(720deg);
+            }
+        }
+
+        .hidden-number {
+            font-size: 2em;
+            letter-spacing: 10px;
+            color: #667eea;
+            text-align: center;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 猜数字游戏</h1>
+        <p class="subtitle">两人对战 - 猜中对方数字者胜</p>
+
+        <!-- 设置阶段 -->
+        <div class="setup-phase active" id="setupPhase">
+            <div class="player-section">
+                <h2>👤 玩家 1</h2>
+                <p style="margin-bottom: 10px; color: #666;">请输入一个四位数（1000-9999）：</p>
+                <div class="input-group">
+                    <input type="number" id="player1Number" min="1000" max="9999" placeholder="****">
+                    <button onclick="setPlayer1Number()">确认</button>
+                </div>
+            </div>
+
+            <div class="player-section player2">
+                <h2>👤 玩家 2</h2>
+                <p style="margin-bottom: 10px; color: #666;">请输入一个四位数（1000-9999）：</p>
+                <div class="input-group">
+                    <input type="number" id="player2Number" min="1000" max="9999" placeholder="****">
+                    <button onclick="setPlayer2Number()">确认</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 游戏阶段 -->
+        <div class="game-phase" id="gamePhase">
+            <div class="game-info">
+                <h3>🎮 游戏进行中</h3>
+                <p class="turn-indicator" id="turnIndicator">玩家 1 的回合</p>
+            </div>
+
+            <div class="guess-section">
+                <h3 id="guessTitle">玩家 1 猜玩家 2 的数字</h3>
+                <div class="input-group">
+                    <input type="number" id="guessInput" min="1000" max="9999" placeholder="****">
+                    <button onclick="makeGuess()">猜！</button>
+                </div>
+                <div id="feedback" class="feedback" style="display: none;"></div>
+            </div>
+
+            <div class="history">
+                <h3>📜 猜测历史</h3>
+                <div id="historyList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 胜利弹窗 -->
+    <div class="winner-modal" id="winnerModal">
+        <div class="winner-content">
+            <h2>🎉</h2>
+            <p id="winnerText">玩家 X 获胜！</p>
+            <button onclick="restartGame()">再来一局</button>
+        </div>
+    </div>
+
+    <script>
+        let player1Number = '';
+        let player2Number = '';
+        let player1Set = false;
+        let player2Set = false;
+        let currentPlayer = 1;
+        let history = [];
+        let player1Guesses = 0;
+        let player2Guesses = 0;
+
+        function setPlayer1Number() {
+            const input = document.getElementById('player1Number');
+            const value = input.value;
+            
+            if (value.length !== 4 || value < 1000 || value > 9999) {
+                alert('请输入有效的四位数（1000-9999）');
+                return;
+            }
+            
+            player1Number = value;
+            player1Set = true;
+            input.value = '';
+            input.disabled = true;
+            input.previousElementSibling.previousElementSibling.innerHTML = '✅ 数字已设置';
+            
+            checkSetupComplete();
+        }
+
+        function setPlayer2Number() {
+            const input = document.getElementById('player2Number');
+            const value = input.value;
+            
+            if (value.length !== 4 || value < 1000 || value > 9999) {
+                alert('请输入有效的四位数（1000-9999）');
+                return;
+            }
+            
+            player2Number = value;
+            player2Set = true;
+            input.value = '';
+            input.disabled = true;
+            input.previousElementSibling.previousElementSibling.innerHTML = '✅ 数字已设置';
+            
+            checkSetupComplete();
+        }
+
+        function checkSetupComplete() {
+            if (player1Set && player2Set) {
+                setTimeout(() => {
+                    document.getElementById('setupPhase').classList.remove('active');
+                    document.getElementById('gamePhase').classList.add('active');
+                    updateTurnIndicator();
+                }, 500);
+            }
+        }
+
+        function updateTurnIndicator() {
+            const indicator = document.getElementById('turnIndicator');
+            const guessTitle = document.getElementById('guessTitle');
+            
+            if (currentPlayer === 1) {
+                indicator.textContent = '🎯 玩家 1 的回合';
+                guessTitle.textContent = '玩家 1 猜玩家 2 的数字';
+            } else {
+                indicator.textContent = '🎯 玩家 2 的回合';
+                guessTitle.textContent = '玩家 2 猜玩家 1 的数字';
+            }
+            
+            document.getElementById('guessInput').value = '';
+            document.getElementById('guessInput').focus();
+            document.getElementById('feedback').style.display = 'none';
+        }
+
+        function makeGuess() {
+            const input = document.getElementById('guessInput');
+            const guess = input.value;
+            
+            if (guess.length !== 4 || guess < 1000 || guess > 9999) {
+                alert('请输入有效的四位数（1000-9999）');
+                return;
+            }
+            
+            const targetNumber = currentPlayer === 1 ? player2Number : player1Number;
+            const correctCount = countCorrectDigits(guess, targetNumber);
+            
+            // 记录历史
+            const guesser = currentPlayer === 1 ? '玩家 1' : '玩家 2';
+            history.push({
+                player: guesser,
+                guess: guess,
+                correct: correctCount
+            });
+            
+            if (currentPlayer === 1) {
+                player1Guesses++;
+            } else {
+                player2Guesses++;
+            }
+            
+            // 显示反馈
+            const feedback = document.getElementById('feedback');
+            feedback.style.display = 'block';
+            
+            if (correctCount === 4) {
+                feedback.textContent = `🎉 恭喜！猜对了 ${correctCount} 个数字！胜利！`;
+                feedback.className = 'feedback';
+                addToHistory();
+                setTimeout(() => showWinner(currentPlayer), 1000);
+            } else {
+                feedback.textContent = `对了 ${correctCount} 个数字，继续加油！`;
+                feedback.className = 'feedback incorrect';
+                addToHistory();
+                
+                // 切换玩家
+                currentPlayer = currentPlayer === 1 ? 2 : 1;
+                setTimeout(updateTurnIndicator, 1500);
+            }
+            
+            input.value = '';
+        }
+
+        function countCorrectDigits(guess, target) {
+            let count = 0;
+            for (let i = 0; i < 4; i++) {
+                if (guess[i] === target[i]) {
+                    count++;
+                }
+            }
+            return count;
+        }
+
+        function addToHistory() {
+            const historyList = document.getElementById('historyList');
+            const lastItem = history[history.length - 1];
+            
+            const item = document.createElement('div');
+            item.className = 'history-item';
+            item.innerHTML = `
+                <span class="history-player">${lastItem.player}</span>
+                <span class="history-guess">猜 ${lastItem.guess}</span>
+                <span class="history-result">✓ ${lastItem.correct} 个</span>
+            `;
+            
+            historyList.insertBefore(item, historyList.firstChild);
+        }
+
+        function showWinner(winner) {
+            const modal = document.getElementById('winnerModal');
+            const winnerText = document.getElementById('winnerText');
+            
+            const winnerName = winner === 1 ? '玩家 1' : '玩家 2';
+            const guessCount = winner === 1 ? player1Guesses : player2Guesses;
+            
+            winnerText.innerHTML = `🏆 ${winnerName} 获胜！<br><small style="font-size: 0.7em; color: #666;">用了 ${guessCount} 次猜测</small>`;
+            
+            modal.classList.add('active');
+            createConfetti();
+        }
+
+        function createConfetti() {
+            const colors = ['#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe', '#43e97b'];
+            
+            for (let i = 0; i < 100; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.left = Math.random() * 100 + 'vw';
+                    confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.animationDuration = (Math.random() * 2 + 2) + 's';
+                    document.body.appendChild(confetti);
+                    
+                    setTimeout(() => confetti.remove(), 4000);
+                }, i * 30);
+            }
+        }
+
+        function restartGame() {
+            player1Number = '';
+            player2Number = '';
+            player1Set = false;
+            player2Set = false;
+            currentPlayer = 1;
+            history = [];
+            player1Guesses = 0;
+            player2Guesses = 0;
+            
+            document.getElementById('winnerModal').classList.remove('active');
+            document.getElementById('gamePhase').classList.remove('active');
+            document.getElementById('setupPhase').classList.add('active');
+            document.getElementById('historyList').innerHTML = '';
+            
+            const p1Input = document.getElementById('player1Number');
+            const p2Input = document.getElementById('player2Number');
+            p1Input.disabled = false;
+            p2Input.disabled = false;
+            p1Input.value = '';
+            p2Input.value = '';
+            p1Input.previousElementSibling.previousElementSibling.innerHTML = '👤 玩家 1';
+            p2Input.previousElementSibling.previousElementSibling.innerHTML = '👤 玩家 2';
+            
+            // 清除所有彩带
+            document.querySelectorAll('.confetti').forEach(c => c.remove());
+        }
+
+        // 支持回车键提交
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                const activeElement = document.activeElement;
+                if (activeElement.id === 'player1Number') {
+                    setPlayer1Number();
+                } else if (activeElement.id === 'player2Number') {
+                    setPlayer2Number();
+                } else if (activeElement.id === 'guessInput') {
+                    makeGuess();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
